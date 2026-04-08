@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator();
 
-function ListaPosts() {
-  const [posts, setPosts] = useState([]);
+// TELA LISTA
+function TelaLista({ navigation }) {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts')
+    fetch('https://jsonplaceholder.typicode.com/users')
       .then((response) => response.json())
       .then((data) => {
-        setPosts(data);
+        setUsers(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Erro ao buscar posts:', error);
+        console.error('Erro ao buscar usuários:', error);
         setLoading(false);
       });
   }, []);
@@ -26,40 +34,89 @@ function ListaPosts() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Carregando posts...</Text>
+        <Text style={styles.loadingText}>Carregando usuários...</Text>
       </View>
     );
   }
 
   return (
     <FlatList
-      data={posts}
+      data={users}
       keyExtractor={(item) => item.id.toString()}
       contentContainerStyle={styles.lista}
       renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Text style={styles.titulo}>{item.title}</Text>
-          <Text style={styles.body}>{item.body}</Text>
-        </View>
+        <Pressable
+          style={styles.card}
+          onPress={() => navigation.navigate('TelaPerfil', { id: item.id })}
+        >
+          <Text style={styles.nome}>{item.name}</Text>
+          <Text style={styles.email}>{item.email}</Text>
+        </Pressable>
       )}
     />
   );
 }
 
+// TELA PERFIL
+function TelaPerfil({ route }) {
+  const { id } = route.params;
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`https://jsonplaceholder.typicode.com/users/${id}`)
+      .then((response) => response.json())
+      .then((data) => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar perfil:', error);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Carregando perfil...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.perfilContainer}>
+      <Text style={styles.titulo}>Perfil do Usuário 👤</Text>
+      <Text style={styles.info}>Nome: {user.name}</Text>
+      <Text style={styles.info}>Email: {user.email}</Text>
+      <Text style={styles.info}>Telefone: {user.phone}</Text>
+      <Text style={styles.info}>Website: {user.website}</Text>
+    </View>
+  );
+}
+
+// APP PRINCIPAL
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen
-          name="ListaPosts"
-          component={ListaPosts}
-          options={{ title: 'Lista de Posts' }}
+          name="TelaLista"
+          component={TelaLista}
+          options={{ title: 'Lista de Usuários' }}
+        />
+        <Stack.Screen
+          name="TelaPerfil"
+          component={TelaPerfil}
+          options={{ title: 'Perfil do Usuário' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
+// ESTILOS
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -82,16 +139,32 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 3,
   },
-  titulo: {
-    fontSize: 18,
+  nome: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
-    textTransform: 'capitalize',
     color: '#222',
+    marginBottom: 5,
   },
-  body: {
+  email: {
     fontSize: 16,
-    color: '#555',
-    lineHeight: 22,
+    color: '#666',
+  },
+  perfilContainer: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+    padding: 20,
+    justifyContent: 'center',
+  },
+  titulo: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 25,
+    textAlign: 'center',
+    color: '#111',
+  },
+  info: {
+    fontSize: 20,
+    marginBottom: 15,
+    color: '#333',
   },
 });
